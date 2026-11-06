@@ -1,0 +1,16 @@
+{
+    "name": "UNodes.Data",
+    "rootNamespace": "UNodes.Data",
+    "references": [
+        "GUID:677848be5f0009f479d02ca1bea1f7df"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
