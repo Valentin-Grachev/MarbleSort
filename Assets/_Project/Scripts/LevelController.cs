@@ -3,11 +3,13 @@ using UNodes;
 public class LevelController : IUpdateHandler
 {
     private readonly RoadView road;
+    public readonly Pool<BallView> BallPool;
 
 
-    public LevelController(RoadView road)
+    public LevelController(RoadView road, BallView ballPrefab)
     {
         this.road = road;
+        BallPool = new Pool<BallView>(ballPrefab);
     }
 
 

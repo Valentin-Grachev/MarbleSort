@@ -28,21 +28,41 @@ public class CycleMovingAlgorithm<T> where T : class
 
     public IReadOnlyList<T> Points => _orderedPoints;
 
+    public bool AddPointIsAvailable(float position)
+    {
+        float normalizedPosition = Normalize(position);
+
+        if (_orderedPoints.Count == 0)
+            return true;
+
+        int insertIndex = GetInsertIndex(normalizedPosition);
+        return HasEnoughSpace(insertIndex, normalizedPosition);
+    }
+
     public void AddPoint(T pointComponent, float position)
     {
         if (pointComponent == null)
             throw new ArgumentNullException(nameof(pointComponent));
 
+        if (_pointPositions.ContainsKey(pointComponent))
+            return;
+
         float normalizedPosition = Normalize(position);
 
-        if (_pointPositions.ContainsKey(pointComponent))
+        if (_orderedPoints.Count == 0)
         {
-            _pointPositions[pointComponent] = normalizedPosition;
+            _pointPositions.Add(pointComponent, normalizedPosition);
+            _orderedPoints.Add(pointComponent);
             return;
         }
 
+        int insertIndex = GetInsertIndex(normalizedPosition);
+
+        if (!HasEnoughSpace(insertIndex, normalizedPosition))
+            return;
+
         _pointPositions.Add(pointComponent, normalizedPosition);
-        _orderedPoints.Add(pointComponent);
+        _orderedPoints.Insert(insertIndex, pointComponent);
     }
 
     public void RemovePoint(T pointComponent)
@@ -97,6 +117,39 @@ public class CycleMovingAlgorithm<T> where T : class
             previousPosition = nextPosition;
             previousSpeed = currentSpeed;
         }
+    }
+
+    private int GetInsertIndex(float position)
+    {
+        float leaderPosition = _pointPositions[_orderedPoints[0]];
+        float newDistanceFromLeader = GetForwardDistance(position, leaderPosition);
+
+        for (int i = 1; i < _orderedPoints.Count; i++)
+        {
+            float currentPosition = _pointPositions[_orderedPoints[i]];
+            float currentDistanceFromLeader = GetForwardDistance(currentPosition, leaderPosition);
+
+            if (newDistanceFromLeader < currentDistanceFromLeader)
+                return i;
+        }
+
+        return _orderedPoints.Count;
+    }
+
+    private bool HasEnoughSpace(int insertIndex, float position)
+    {
+        float previousPosition = _pointPositions[_orderedPoints[insertIndex - 1]];
+        float distanceToPrevious = GetForwardDistance(position, previousPosition);
+
+        if (distanceToPrevious < distanceBetweenPoints)
+            return false;
+
+        if (insertIndex >= _orderedPoints.Count)
+            return true;
+
+        float nextPosition = _pointPositions[_orderedPoints[insertIndex]];
+        float distanceToNext = GetForwardDistance(nextPosition, position);
+        return distanceToNext >= distanceBetweenPoints;
     }
 
     private static float Normalize(float position)

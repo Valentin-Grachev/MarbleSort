@@ -17,7 +17,7 @@ public class RoadView : MonoBehaviour
     }
 
     [SerializeField] private List<float> _inputBallMoveProgressPoints;
-    [SerializeField] private BallTrigger _ballTrigger;
+    [SerializeField] private RoadTrigger _ballTrigger;
     [SerializeField] private SpriteRenderer _placeRendererPrefab;
     [SerializeField] private SplineContainer _spline;
     [SerializeField] private Color _placeColor1;
@@ -35,8 +35,8 @@ public class RoadView : MonoBehaviour
     private readonly CycleMovingAlgorithm<BallState> movingAlgorithm =
         new(MOVE_SPEED, FAST_MOVE_SPEED, BALL_NORM_DISTANCE);
 
+    public RoadTrigger BallTrigger => _ballTrigger;
 
-    public BallTrigger BallTrigger => _ballTrigger;
 
 
     private void Awake()
@@ -44,16 +44,39 @@ public class RoadView : MonoBehaviour
         CreatePlaces();
     }
 
-
     public bool TryPutBall(BallView ball)
     {
-        if (TryGetFreeMoveProgressForBall(out float moveProgress))
+        bool positionExists = false;
+        float normPosition = 0f;
+
+        foreach (var normPositionVariant in _inputBallMoveProgressPoints)
         {
-            PutBallToRoad(ball, moveProgress);
-            return true;
+            if (movingAlgorithm.AddPointIsAvailable(normPositionVariant))
+            {
+                positionExists = true;
+                normPosition = normPositionVariant;
+                break;
+            };
         }
 
-        return false;
+        if (!positionExists) return false;
+
+        ball.SetPhysics(false);
+        var realTransform = new GameObject("BallReal").transform;
+        realTransform.SetParent(transform);
+        realTransform.position = _spline.EvaluatePosition(normPosition);
+
+        ball.AnimateMoveToRoadPlace(realTransform);
+
+        var ballState = new BallState()
+        {
+            ball = ball,
+            realTransform = realTransform,
+        };
+
+        movingAlgorithm.AddPoint(ballState, normPosition);
+
+        return true;
     }
 
 
@@ -121,56 +144,6 @@ public class RoadView : MonoBehaviour
     }
 
 
-    private bool TryGetFreeMoveProgressForBall(out float moveProgress)
-    {
-        foreach (var progressPoint in _inputBallMoveProgressPoints)
-        {
-            float fromProgress = progressPoint - CHECK_BALL_PROGRESS_DISTANCE;
-            float toProgress = progressPoint + CHECK_BALL_PROGRESS_DISTANCE;
-
-            bool isOccupied = false;
-            
-            foreach (var ballState in movingAlgorithm.Points)
-            {
-                float ballNormPosition = movingAlgorithm.GetPosition(ballState);
-
-                if (fromProgress <= ballNormPosition && ballNormPosition <= toProgress)
-                {
-                    isOccupied = true;
-                    break;
-                }
-            }
-
-            if (!isOccupied)
-            {
-                moveProgress = progressPoint;
-                return true;
-            }
-        }
-
-        moveProgress = 0f;
-        return false;
-    }
-
-
-    private void PutBallToRoad(BallView ball, float moveProgress)
-    {
-        ball.SetPhysics(false);
-
-        var realTransform = new GameObject("BallReal").transform;
-        realTransform.SetParent(transform);
-        realTransform.position = _spline.EvaluatePosition(moveProgress);
-
-        ball.AnimateMoveToRoadPlace(realTransform);
-
-        var ballState = new BallState()
-        {
-            ball = ball,
-            realTransform = realTransform,
-        };
-
-        movingAlgorithm.AddPoint(ballState, moveProgress);
-    }
 
     private void OnDrawGizmosSelected()
     {

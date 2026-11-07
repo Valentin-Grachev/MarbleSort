@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BallTrigger : MonoBehaviour
+public class RoadTrigger : MonoBehaviour
 {
     private List<BallView> _insideBalls = new();
 
