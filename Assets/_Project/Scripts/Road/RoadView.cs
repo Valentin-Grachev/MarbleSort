@@ -4,34 +4,39 @@ using UnityEngine.Splines;
 
 public class RoadView : MonoBehaviour
 {
-    private class PlaceRendererState
+    private class PlaceState
     {
         public SpriteRenderer spriteRenderer;
         public float moveProgress;
     }
 
-    private class BallPlaceState
+    private class BallState
     {
-        public RoadBallPlace ballPlace;
-        public float moveProgress;
+        public BallView ball;
+        public Transform realTransform;
     }
 
-
-
+    [SerializeField] private List<float> _inputBallMoveProgressPoints;
+    [SerializeField] private BallTrigger _ballTrigger;
     [SerializeField] private SpriteRenderer _placeRendererPrefab;
     [SerializeField] private SplineContainer _spline;
     [SerializeField] private Color _placeColor1;
     [SerializeField] private Color _placeColor2;
 
-    private List<PlaceRendererState> _placeRendererStates = new();
-    private List<BallPlaceState> _ballPlaceStates = new();
-    private BallView _mainBall = null;
+    private List<PlaceState> _placeStates = new();
 
     private const int PLACES_AMOUNT = 24;
-    private const float BETWEEN_DISTANCE = 1f / PLACES_AMOUNT;
+    private const float BALL_NORM_DISTANCE = 1f / PLACES_AMOUNT;
+    private const float CHECK_BALL_PROGRESS_DISTANCE = BALL_NORM_DISTANCE * 0.98f;
+    private const float BALL_DISTANCE = 0.7f;
     private const float MOVE_SPEED = 0.23f;
     private const float FAST_MOVE_SPEED = 0.4f;
 
+    private readonly CycleMovingAlgorithm<BallState> movingAlgorithm =
+        new(MOVE_SPEED, FAST_MOVE_SPEED, BALL_NORM_DISTANCE);
+
+
+    public BallTrigger BallTrigger => _ballTrigger;
 
 
     private void Awake()
@@ -40,12 +45,15 @@ public class RoadView : MonoBehaviour
     }
 
 
-    public void PutBall(BallView ball)
+    public bool TryPutBall(BallView ball)
     {
-        _mainBall ??= ball;
+        if (TryGetFreeMoveProgressForBall(out float moveProgress))
+        {
+            PutBallToRoad(ball, moveProgress);
+            return true;
+        }
 
-
-
+        return false;
     }
 
 
@@ -66,13 +74,13 @@ public class RoadView : MonoBehaviour
             }
 
             Vector3 position = _spline.EvaluatePosition(progress);
-            progress += BETWEEN_DISTANCE;
+            progress += BALL_NORM_DISTANCE;
 
             var placeRenderer = Instantiate(_placeRendererPrefab, transform);
             placeRenderer.transform.position = position;
             placeRenderer.color = placeColor;
 
-            _placeRendererStates.Add(new() 
+            _placeStates.Add(new() 
             { 
                 spriteRenderer = placeRenderer, 
                 moveProgress = progress 
@@ -83,43 +91,100 @@ public class RoadView : MonoBehaviour
 
     private void Update()
     {
+        movingAlgorithm.Update(Time.deltaTime);
+
         UpdateMovePlaces();
+        UpdateMoveBalls();
     }
 
 
     private void UpdateMovePlaces()
     {
-        foreach (var placeData in _placeRendererStates)
+        foreach (var placeState in _placeStates)
         {
-            placeData.moveProgress =
-                (placeData.moveProgress + Time.deltaTime * MOVE_SPEED) % 1f;
+            placeState.moveProgress =
+                (placeState.moveProgress + Time.deltaTime * MOVE_SPEED) % 1f;
 
-            Vector3 position = _spline.EvaluatePosition(placeData.moveProgress);
-            placeData.spriteRenderer.transform.position = position;
-
+            Vector3 position = _spline.EvaluatePosition(placeState.moveProgress);
+            placeState.spriteRenderer.transform.position = position;
         }
     }
 
-
-
-
-    private static class AI
+    private void UpdateMoveBalls()
     {
-        public static void AddBallToRoad(RoadView road, BallView ball)
+        foreach (var ballState in movingAlgorithm.Points)
         {
-            
-        }
-
-        public static void RemoveBallFromRoad(RoadView road, BallView ball)
-        {
-
-        }
-
-        public static void UpdateMoveBalls()
-        {
-
+            var ballNormPosition = movingAlgorithm.GetPosition(ballState);
+            var position = _spline.EvaluatePosition(ballNormPosition);
+            ballState.realTransform.position = position;
         }
     }
+
+
+    private bool TryGetFreeMoveProgressForBall(out float moveProgress)
+    {
+        foreach (var progressPoint in _inputBallMoveProgressPoints)
+        {
+            float fromProgress = progressPoint - CHECK_BALL_PROGRESS_DISTANCE;
+            float toProgress = progressPoint + CHECK_BALL_PROGRESS_DISTANCE;
+
+            bool isOccupied = false;
+            
+            foreach (var ballState in movingAlgorithm.Points)
+            {
+                float ballNormPosition = movingAlgorithm.GetPosition(ballState);
+
+                if (fromProgress <= ballNormPosition && ballNormPosition <= toProgress)
+                {
+                    isOccupied = true;
+                    break;
+                }
+            }
+
+            if (!isOccupied)
+            {
+                moveProgress = progressPoint;
+                return true;
+            }
+        }
+
+        moveProgress = 0f;
+        return false;
+    }
+
+
+    private void PutBallToRoad(BallView ball, float moveProgress)
+    {
+        ball.SetPhysics(false);
+
+        var realTransform = new GameObject("BallReal").transform;
+        realTransform.SetParent(transform);
+        realTransform.position = _spline.EvaluatePosition(moveProgress);
+
+        ball.AnimateMoveToRoadPlace(realTransform);
+
+        var ballState = new BallState()
+        {
+            ball = ball,
+            realTransform = realTransform,
+        };
+
+        movingAlgorithm.AddPoint(ballState, moveProgress);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.blue;
+
+        foreach (var progressPoint in _inputBallMoveProgressPoints)
+        {
+            var position = _spline.EvaluatePosition(progressPoint);
+            Gizmos.DrawWireSphere(position, 0.1f);
+        }
+
+    }
+
+
 
 
 
