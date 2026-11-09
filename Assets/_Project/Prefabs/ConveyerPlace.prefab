@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1108422370514016329}
   - component: {fileID: 7818614704218386372}
   m_Layer: 0
-  m_Name: RoadPlace
+  m_Name: ConveyerPlace
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

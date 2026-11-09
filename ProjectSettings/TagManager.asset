@@ -44,5 +44,8 @@ TagManager:
   - name: Level
     uniqueID: 2092799445
     locked: 0
+  - name: Receiver
+    uniqueID: 1035034049
+    locked: 0
   m_RenderingLayers:
   - Default

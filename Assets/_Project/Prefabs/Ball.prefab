@@ -50,6 +50,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BallView
   _rigidbody: {fileID: 7446493717853556518}
   _collider: {fileID: 8135774566544578851}
+  _spriteRenderer: {fileID: 8925538859840937444}
 --- !u!210 &3061712116906720145
 SortingGroup:
   m_ObjectHideFlags: 0
@@ -60,7 +61,7 @@ SortingGroup:
   m_Enabled: 1
   m_SortingLayerID: 2092799445
   m_SortingLayer: 1
-  m_SortingOrder: 2
+  m_SortingOrder: 3
   m_SortAtRoot: 0
   m_Sort3DAs2D: 0
 --- !u!212 &8925538859840937444
@@ -113,7 +114,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: 28ae308759e93fb42b2537d46ad8de8c, type: 3}
-  m_Color: {r: 1, g: 0.4584905, b: 0.4584905, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

@@ -226,7 +226,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "41987fda60a621f743b634c1474f673a6dfb9a95"
+      "hash": "88bcb0fd4cde036394f44a7109db431208c41161"
     },
     "com.unity.modules.animation": {
       "version": "1.0.0",

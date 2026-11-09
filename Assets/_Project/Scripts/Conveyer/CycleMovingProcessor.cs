@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-public class CycleMovingAlgorithm<T> where T : class
+public class CycleMovingProcessor<T> where T : class
 {
     private readonly Dictionary<T, float> _pointPositions = new();
     private readonly List<T> _orderedPoints = new();
@@ -10,7 +10,10 @@ public class CycleMovingAlgorithm<T> where T : class
     private readonly float slowMoveSpeed;
     private readonly float fastMoveSpeed;
 
-    public CycleMovingAlgorithm(float slowMoveSpeed, float fastMoveSpeed, float distanceBetweenPoints)
+
+    public IReadOnlyDictionary<T, float> PointPositions => _pointPositions;
+
+    public CycleMovingProcessor(float slowMoveSpeed, float fastMoveSpeed, int maxPoints)
     {
         if (slowMoveSpeed < 0f)
             throw new ArgumentOutOfRangeException(nameof(slowMoveSpeed));
@@ -18,12 +21,12 @@ public class CycleMovingAlgorithm<T> where T : class
         if (fastMoveSpeed < 0f)
             throw new ArgumentOutOfRangeException(nameof(fastMoveSpeed));
 
-        if (distanceBetweenPoints < 0f || distanceBetweenPoints >= 1f)
-            throw new ArgumentOutOfRangeException(nameof(distanceBetweenPoints));
+        if (maxPoints <= 0)
+            throw new ArgumentOutOfRangeException(nameof(maxPoints));
 
         this.slowMoveSpeed = slowMoveSpeed;
         this.fastMoveSpeed = fastMoveSpeed;
-        this.distanceBetweenPoints = distanceBetweenPoints;
+        distanceBetweenPoints = 1f / maxPoints;
     }
 
     public IReadOnlyList<T> Points => _orderedPoints;
