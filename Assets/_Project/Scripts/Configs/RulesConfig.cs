@@ -8,7 +8,7 @@ public class RulesConfig : ScriptableObject
     [field: SerializeField] public int ConveyerMaxBalls { get; private set; } = 24;
     [field: SerializeField] public float ConveyerNormalizedSpeed { get; private set; }
     [field: SerializeField] public float ConveyerFastNormalizedSpeed { get; private set; }
-    [field: SerializeField] public List<float> ConveyerInputNormalizedPositions { get; private set; }
+    [field: SerializeField] public Vector2 ConveyerInputNormalizedRange { get; private set; }
 
 
     [field: Header("Receivers:")]

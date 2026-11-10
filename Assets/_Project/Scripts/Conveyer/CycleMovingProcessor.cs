@@ -1,256 +1,176 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
-public class CycleMovingProcessor<T> where T : class
+public class CycleMovingProcessor<TPointComponent> where TPointComponent : class
 {
-    private readonly Dictionary<T, double> _positions =
-        new Dictionary<T, double>();
+    public class PointState
+    {
+        public TPointComponent component;
+        public float position;
+    }
 
-    private readonly Dictionary<T, float> _pointPositions =
-        new Dictionary<T, float>();
+    private List<PointState> _orderedPoints = new();
 
-    private readonly List<T> _orderedPoints =
-        new List<T>();
-
-    private double[] _currentPositions = new double[0];
-    private double[] _nextPositions = new double[0];
-
-    private const double SPACE_EPSILON = 0.0000001;
 
     private readonly int maxPoints;
-    private readonly double distanceBetweenPoints;
-    private readonly double slowMoveSpeed;
-    private readonly double fastMoveSpeed;
+    private readonly float pointMoveDistance;
+    private readonly float pointInsertRadius;
+    private readonly float slowMoveSpeed;
+    private readonly float fastMoveSpeed;
+    private readonly Vector2 insertRange;
 
-    public IReadOnlyDictionary<T, float> PointPositions => _pointPositions;
+    public IReadOnlyList<PointState> PointStates => _orderedPoints;
 
-    public IReadOnlyList<T> Points => _orderedPoints;
 
-    public CycleMovingProcessor(
-        float slowMoveSpeed,
-        float fastMoveSpeed,
-        int maxPoints)
+    public CycleMovingProcessor(float slowMoveSpeed, float fastMoveSpeed, int maxPoints)
     {
-        ValidateSpeed(slowMoveSpeed, nameof(slowMoveSpeed));
-        ValidateSpeed(fastMoveSpeed, nameof(fastMoveSpeed));
-
-        if (fastMoveSpeed < slowMoveSpeed)
-            throw new ArgumentException("Fast speed must be >= slow speed.");
-
-        if (maxPoints <= 0)
-            throw new ArgumentOutOfRangeException(nameof(maxPoints));
-
         this.maxPoints = maxPoints;
         this.slowMoveSpeed = slowMoveSpeed;
         this.fastMoveSpeed = fastMoveSpeed;
 
-        distanceBetweenPoints = 1.0 / maxPoints;
+        pointMoveDistance = 1f / maxPoints;
+        pointInsertRadius = pointMoveDistance / 2f * 0.99f;
     }
 
-    public bool AddPointIsAvailable(float position)
+    public bool InsertToRangeIsAvailable(float from, float to)
+        => TryFindPositionForInsertPointInRange(from, to, out _);
+
+
+
+    public void InsertPointToRange(TPointComponent component, float from, float to, out float position)
     {
-        ValidatePosition(position);
-
-        if (_orderedPoints.Count >= maxPoints)
-            return false;
-
-        double normalizedPosition = Normalize(position);
-
-        if (_orderedPoints.Count == 0)
-            return true;
-
-        int insertIndex = GetInsertIndex(normalizedPosition);
-
-        return HasEnoughSpace(insertIndex, normalizedPosition);
-    }
-
-    public void AddPoint(T pointComponent, float position)
-    {
-        if (pointComponent == null)
-            throw new ArgumentNullException(nameof(pointComponent));
-
-        if (_positions.ContainsKey(pointComponent) ||
-            _orderedPoints.Count >= maxPoints)
-            return;
-
-        ValidatePosition(position);
-
-        double normalizedPosition = Normalize(position);
-
         if (_orderedPoints.Count == 0)
         {
-            AddPosition(pointComponent, normalizedPosition);
-            _orderedPoints.Add(pointComponent);
-            return;
+            position = (from + to) / 2f;
+            InsertPoint(component, position);
         }
-
-        int insertIndex = GetInsertIndex(normalizedPosition);
-
-        if (!HasEnoughSpace(insertIndex, normalizedPosition))
-            return;
-
-        AddPosition(pointComponent, normalizedPosition);
-        _orderedPoints.Insert(insertIndex, pointComponent);
-    }
-
-    public void RemovePoint(T pointComponent)
-    {
-        if (pointComponent == null)
-            throw new ArgumentNullException(nameof(pointComponent));
-
-        if (_positions.Remove(pointComponent))
+        else
         {
-            _pointPositions.Remove(pointComponent);
-            _orderedPoints.Remove(pointComponent);
+            bool success = TryFindPositionForInsertPointInRange(from, to, out position);
+            if (success) InsertPoint(component, position);
+            else throw new Exception("No space enough for insert!");
         }
     }
 
-    public float GetPosition(T pointComponent)
+    public void InsertPoint(TPointComponent component, float position)
     {
-        if (pointComponent == null)
-            throw new ArgumentNullException(nameof(pointComponent));
-
-        return _pointPositions[pointComponent];
+        int orderIndex = GetOrderIndexForInsertPoint(position);
+        _orderedPoints.Insert(orderIndex, new PointState()
+        {
+            component = component,
+            position = position
+        });
     }
+
+
+
+    public void RemovePoint(TPointComponent component)
+    {
+
+    }
+
+
 
     public void Update(float deltaTime)
     {
-        if (float.IsNaN(deltaTime) || float.IsInfinity(deltaTime))
-            throw new ArgumentOutOfRangeException(nameof(deltaTime));
+        if (_orderedPoints.Count == 0) return;
 
-        if (deltaTime <= 0f || _orderedPoints.Count == 0)
-            return;
+        float slowMovement = slowMoveSpeed * deltaTime;
+        float fastMovement = fastMoveSpeed * deltaTime;
 
-        int count = _orderedPoints.Count;
+        var headPointState = _orderedPoints[0];
 
-        EnsureBufferCapacity(count);
-
-        double dt = deltaTime;
-
-        // Reconstruct unwrapped positions.
-        _currentPositions[0] = _positions[_orderedPoints[0]];
-
-        for (int i = 1; i < count; i++)
-        {
-            double gap = GetForwardDistance(
-                _positions[_orderedPoints[i]],
-                _positions[_orderedPoints[i - 1]]);
-
-            _currentPositions[i] =
-                _currentPositions[i - 1] - gap;
-        }
-
-        // Move leader.
-        _nextPositions[0] =
-            _currentPositions[0] + slowMoveSpeed * dt;
-
-        // Move followers.
-        for (int i = 1; i < count; i++)
-        {
-            double freePosition =
-                _currentPositions[i] + fastMoveSpeed * dt;
-
-            double maxAllowedPosition =
-                _nextPositions[i - 1] - distanceBetweenPoints;
-
-            _nextPositions[i] =
-                Math.Min(freePosition, maxAllowedPosition);
-        }
-
-        // Save normalized positions.
-        for (int i = 0; i < count; i++)
-        {
-            T point = _orderedPoints[i];
-
-            double position = Normalize(_nextPositions[i]);
-
-            _positions[point] = position;
-            _pointPositions[point] = (float)position;
-        }
-    }
-
-    private void AddPosition(T point, double position)
-    {
-        _positions.Add(point, position);
-        _pointPositions.Add(point, (float)position);
-    }
-
-    private int GetInsertIndex(double position)
-    {
-        double leaderPosition = _positions[_orderedPoints[0]];
-
-        double newDistance =
-            GetForwardDistance(position, leaderPosition);
+        headPointState.position = (headPointState.position + slowMovement) % 1f;
 
         for (int i = 1; i < _orderedPoints.Count; i++)
         {
-            double currentDistance = GetForwardDistance(
-                _positions[_orderedPoints[i]],
-                leaderPosition);
+            var pointState = _orderedPoints[i];
 
-            if (newDistance < currentDistance)
+            float currentDistanceToHead = GetForwardDistance
+                (pointState.position, headPointState.position);
+
+            float targetDistanceToHead = pointMoveDistance * i;
+
+            bool useFastSpeed = currentDistanceToHead > targetDistanceToHead;
+            float movement = useFastSpeed ? fastMovement : slowMovement;
+
+            pointState.position = (pointState.position + movement) % 1f;
+        }
+    }
+
+
+    public void Clear()
+    {
+
+    }
+
+
+    private bool TryFindPositionForInsertPointInRange
+        (float minBorder, float maxBorder, out float result)
+    {
+        result = 0f;
+
+        float minFilterPosition = minBorder - pointInsertRadius;
+        float maxFilterPosition = maxBorder + pointInsertRadius;
+        float pointDiameter = pointInsertRadius * 2f;
+
+        float candidatePosition = minBorder + pointInsertRadius;
+
+        while (candidatePosition + pointInsertRadius <= maxBorder)
+        {
+            bool positionIsDefined = true;
+
+            foreach (var pointState in _orderedPoints)
+            {
+                float pointPosition = pointState.position;
+
+                if (pointPosition < minFilterPosition || maxFilterPosition < pointPosition)
+                    continue;
+
+                float distance = Mathf.Abs(candidatePosition - pointPosition);
+
+                if (distance < pointDiameter)
+                {
+                    candidatePosition = pointPosition + pointDiameter;
+                    positionIsDefined = false;
+                    break;
+                }
+            }
+
+            if (positionIsDefined)
+            {
+                result = candidatePosition;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    private int GetOrderIndexForInsertPoint(float position)
+    {
+        if (_orderedPoints.Count == 0) return 0;
+
+        float headPosition = _orderedPoints[0].position;
+        float distanceToHead = GetForwardDistance(position, headPosition); 
+
+        for (int i = 1; i < _orderedPoints.Count; i++)
+        {
+            float pointPosition = _orderedPoints[i].position;
+            float otherDistanceToHead = GetForwardDistance(pointPosition, headPosition);
+
+            if (distanceToHead < otherDistanceToHead) 
                 return i;
         }
 
         return _orderedPoints.Count;
     }
 
-    private bool HasEnoughSpace(int insertIndex, double position)
-    {
-        T previousPoint = _orderedPoints[insertIndex - 1];
+    private float GetForwardDistance(float from, float to)
+        => from < to ? to - from : 1f - from + to;
 
-        int nextIndex =
-            insertIndex >= _orderedPoints.Count ? 0 : insertIndex;
 
-        T nextPoint = _orderedPoints[nextIndex];
 
-        double distanceToPrevious = GetForwardDistance(
-            position,
-            _positions[previousPoint]);
-
-        double distanceToNext = GetForwardDistance(
-            _positions[nextPoint],
-            position);
-
-        return distanceToPrevious + SPACE_EPSILON >= distanceBetweenPoints
-            && distanceToNext + SPACE_EPSILON >= distanceBetweenPoints;
-    }
-
-    private void EnsureBufferCapacity(int capacity)
-    {
-        if (_currentPositions.Length >= capacity)
-            return;
-
-        Array.Resize(ref _currentPositions, capacity);
-        Array.Resize(ref _nextPositions, capacity);
-    }
-
-    private static double Normalize(double position)
-    {
-        position %= 1.0;
-
-        if (position < 0.0)
-            position += 1.0;
-
-        return position;
-    }
-
-    private static double GetForwardDistance(
-        double fromPosition,
-        double toPosition)
-    {
-        return Normalize(toPosition - fromPosition);
-    }
-
-    private static void ValidatePosition(float position)
-    {
-        if (float.IsNaN(position) || float.IsInfinity(position))
-            throw new ArgumentOutOfRangeException(nameof(position));
-    }
-
-    private static void ValidateSpeed(float speed, string parameterName)
-    {
-        if (speed < 0f || float.IsNaN(speed) || float.IsInfinity(speed))
-            throw new ArgumentOutOfRangeException(parameterName);
-    }
 }

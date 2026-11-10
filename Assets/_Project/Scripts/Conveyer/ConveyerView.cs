@@ -34,7 +34,7 @@ public class ConveyerView : MonoBehaviour
         for (int i = 0; i < rules.ConveyerMaxBalls; i++)
         {
             var placeRenderer = Instantiate(_placeRendererPrefab, transform);
-            _placeMovingProcessor.AddPoint(placeRenderer, normalizedPosition);
+            _placeMovingProcessor.InsertPoint(placeRenderer, normalizedPosition);
 
             var color = i % 6 == 0 || i % 6 == 1 || i % 6 == 2 ?
                 _placeColor1 : _placeColor2;
@@ -49,8 +49,11 @@ public class ConveyerView : MonoBehaviour
     {
         _placeMovingProcessor.Update(Time.deltaTime);
 
-        foreach (var placePoint in _placeMovingProcessor.PointPositions)
-            placePoint.Key.transform.position = _spline.EvaluatePosition(placePoint.Value);
+        foreach (var pointState in _placeMovingProcessor.PointStates)
+        {
+            Vector3 worldPosition = _spline.EvaluatePosition((float)pointState.position);
+            pointState.component.transform.position = worldPosition;
+        }   
     }
 
 
@@ -58,11 +61,13 @@ public class ConveyerView : MonoBehaviour
     {
         Gizmos.color = Color.blue;
 
-        foreach (var normalizedPosition in Configs.Rules.ConveyerInputNormalizedPositions)
-        {
-            var position = _spline.EvaluatePosition(normalizedPosition);
-            Gizmos.DrawWireSphere(position, 0.1f);
-        }
+
+        var from = _spline.EvaluatePosition(Configs.Rules.ConveyerInputNormalizedRange.x);
+        Gizmos.DrawWireSphere(from, 0.1f);
+
+        var to = _spline.EvaluatePosition(Configs.Rules.ConveyerInputNormalizedRange.y);
+        Gizmos.DrawWireSphere(to, 0.1f);
+
     }
 
 

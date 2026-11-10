@@ -15,9 +15,5 @@ MonoBehaviour:
   <ConveyerMaxBalls>k__BackingField: 24
   <ConveyerNormalizedSpeed>k__BackingField: 0.22
   <ConveyerFastNormalizedSpeed>k__BackingField: 0.4
-  <ConveyerInputNormalizedPositions>k__BackingField:
-  - 0.82
-  - 0.8
-  - 0.84
-  - 0.78
+  <ConveyerInputNormalizedRange>k__BackingField: {x: 0.77, y: 0.86}
   <ReceiverDistanceY>k__BackingField: 0.83

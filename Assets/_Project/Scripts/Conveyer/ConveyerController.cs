@@ -71,10 +71,12 @@ public class ConveyerController : IUpdateHandler
     {
         cellMovingProcessor.Update(Time.deltaTime);
 
-        foreach (var cellPoint in cellMovingProcessor.PointPositions)
+        foreach (var pointState in cellMovingProcessor.PointStates)
         {
-            cellPoint.Key.transform.position = levelController.Conveyer
-                .MovingSpline.EvaluatePosition(cellPoint.Value);
+            Vector3 worldPosition = levelController.Conveyer
+                .MovingSpline.EvaluatePosition((float)pointState.position);
+
+            pointState.component.transform.position = worldPosition;
         }
     }
 
@@ -83,44 +85,30 @@ public class ConveyerController : IUpdateHandler
         if (_inputBalls.Count == 0) return;
 
         var ball = _inputBalls[0];
+        Vector2 inputRange = Configs.Rules.ConveyerInputNormalizedRange;
 
-        foreach (var inputNormalizedPosition in Configs.Rules.ConveyerInputNormalizedPositions)
+        if (cellMovingProcessor.InsertToRangeIsAvailable(inputRange.x, inputRange.y))
         {
-            if (cellMovingProcessor.AddPointIsAvailable(inputNormalizedPosition))
+            var cell = new ConveyerCell()
             {
-                PutBallToConveyer(ball, inputNormalizedPosition);
-                break;
-            }
+                ball = ball,
+                transform = Pools.ConveyerCells.Get(),
+            };
+
+            cellMovingProcessor.InsertPointToRange
+                (cell, inputRange.x, inputRange.y, out float position);
+
+            cell.transform.position = levelController.Conveyer
+                .MovingSpline.EvaluatePosition(position);
+
+            ball.AnimateMoveToConveyerCell(cell.transform);
+            ball.SetPhysics(false);
+
+            _inputBalls.Remove(ball);
+
         }
     }
 
-    private void PutBallToConveyer(BallView ball, float normalizedPosition)
-    {
-        var cell = new ConveyerCell()
-        {
-            ball = ball,
-            transform = Pools.ConveyerCells.Get(),
-        };
-
-        cell.transform.position = levelController.Conveyer
-            .MovingSpline.EvaluatePosition(normalizedPosition);
-
-        cellMovingProcessor.AddPoint(cell, normalizedPosition);
-        ball.AnimateMoveToConveyerCell(cell.transform);
-        ball.SetPhysics(false);
-
-        _inputBalls.Remove(ball);
-    }
-
-    private void PutBallToReceiver(BallView ball, ReceiverView receiver)
-    {
-
-    }
-
-
-
-
-    
 
 
 }
