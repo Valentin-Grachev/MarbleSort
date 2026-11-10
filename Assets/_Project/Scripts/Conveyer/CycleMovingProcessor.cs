@@ -3,42 +3,64 @@ using System.Collections.Generic;
 
 public class CycleMovingProcessor<T> where T : class
 {
-    private readonly Dictionary<T, float> _pointPositions = new();
-    private readonly List<T> _orderedPoints = new();
+    private readonly Dictionary<T, double> _positions =
+        new Dictionary<T, double>();
 
-    private readonly float distanceBetweenPoints;
-    private readonly float slowMoveSpeed;
-    private readonly float fastMoveSpeed;
+    private readonly Dictionary<T, float> _pointPositions =
+        new Dictionary<T, float>();
 
+    private readonly List<T> _orderedPoints =
+        new List<T>();
+
+    private double[] _currentPositions = new double[0];
+    private double[] _nextPositions = new double[0];
+
+    private const double SPACE_EPSILON = 0.0000001;
+
+    private readonly int maxPoints;
+    private readonly double distanceBetweenPoints;
+    private readonly double slowMoveSpeed;
+    private readonly double fastMoveSpeed;
 
     public IReadOnlyDictionary<T, float> PointPositions => _pointPositions;
 
-    public CycleMovingProcessor(float slowMoveSpeed, float fastMoveSpeed, int maxPoints)
-    {
-        if (slowMoveSpeed < 0f)
-            throw new ArgumentOutOfRangeException(nameof(slowMoveSpeed));
+    public IReadOnlyList<T> Points => _orderedPoints;
 
-        if (fastMoveSpeed < 0f)
-            throw new ArgumentOutOfRangeException(nameof(fastMoveSpeed));
+    public CycleMovingProcessor(
+        float slowMoveSpeed,
+        float fastMoveSpeed,
+        int maxPoints)
+    {
+        ValidateSpeed(slowMoveSpeed, nameof(slowMoveSpeed));
+        ValidateSpeed(fastMoveSpeed, nameof(fastMoveSpeed));
+
+        if (fastMoveSpeed < slowMoveSpeed)
+            throw new ArgumentException("Fast speed must be >= slow speed.");
 
         if (maxPoints <= 0)
             throw new ArgumentOutOfRangeException(nameof(maxPoints));
 
+        this.maxPoints = maxPoints;
         this.slowMoveSpeed = slowMoveSpeed;
         this.fastMoveSpeed = fastMoveSpeed;
-        distanceBetweenPoints = 1f / maxPoints;
-    }
 
-    public IReadOnlyList<T> Points => _orderedPoints;
+        distanceBetweenPoints = 1.0 / maxPoints;
+    }
 
     public bool AddPointIsAvailable(float position)
     {
-        float normalizedPosition = Normalize(position);
+        ValidatePosition(position);
+
+        if (_orderedPoints.Count >= maxPoints)
+            return false;
+
+        double normalizedPosition = Normalize(position);
 
         if (_orderedPoints.Count == 0)
             return true;
 
         int insertIndex = GetInsertIndex(normalizedPosition);
+
         return HasEnoughSpace(insertIndex, normalizedPosition);
     }
 
@@ -47,14 +69,17 @@ public class CycleMovingProcessor<T> where T : class
         if (pointComponent == null)
             throw new ArgumentNullException(nameof(pointComponent));
 
-        if (_pointPositions.ContainsKey(pointComponent))
+        if (_positions.ContainsKey(pointComponent) ||
+            _orderedPoints.Count >= maxPoints)
             return;
 
-        float normalizedPosition = Normalize(position);
+        ValidatePosition(position);
+
+        double normalizedPosition = Normalize(position);
 
         if (_orderedPoints.Count == 0)
         {
-            _pointPositions.Add(pointComponent, normalizedPosition);
+            AddPosition(pointComponent, normalizedPosition);
             _orderedPoints.Add(pointComponent);
             return;
         }
@@ -64,7 +89,7 @@ public class CycleMovingProcessor<T> where T : class
         if (!HasEnoughSpace(insertIndex, normalizedPosition))
             return;
 
-        _pointPositions.Add(pointComponent, normalizedPosition);
+        AddPosition(pointComponent, normalizedPosition);
         _orderedPoints.Insert(insertIndex, pointComponent);
     }
 
@@ -73,8 +98,11 @@ public class CycleMovingProcessor<T> where T : class
         if (pointComponent == null)
             throw new ArgumentNullException(nameof(pointComponent));
 
-        if (_pointPositions.Remove(pointComponent))
+        if (_positions.Remove(pointComponent))
+        {
+            _pointPositions.Remove(pointComponent);
             _orderedPoints.Remove(pointComponent);
+        }
     }
 
     public float GetPosition(T pointComponent)
@@ -87,91 +115,142 @@ public class CycleMovingProcessor<T> where T : class
 
     public void Update(float deltaTime)
     {
+        if (float.IsNaN(deltaTime) || float.IsInfinity(deltaTime))
+            throw new ArgumentOutOfRangeException(nameof(deltaTime));
+
         if (deltaTime <= 0f || _orderedPoints.Count == 0)
             return;
 
-        T leader = _orderedPoints[0];
-        float leaderPosition = Normalize(_pointPositions[leader] + slowMoveSpeed * deltaTime);
-        _pointPositions[leader] = leaderPosition;
+        int count = _orderedPoints.Count;
 
-        float previousPosition = leaderPosition;
-        float previousSpeed = slowMoveSpeed;
+        EnsureBufferCapacity(count);
 
-        for (int i = 1; i < _orderedPoints.Count; i++)
+        double dt = deltaTime;
+
+        // Reconstruct unwrapped positions.
+        _currentPositions[0] = _positions[_orderedPoints[0]];
+
+        for (int i = 1; i < count; i++)
+        {
+            double gap = GetForwardDistance(
+                _positions[_orderedPoints[i]],
+                _positions[_orderedPoints[i - 1]]);
+
+            _currentPositions[i] =
+                _currentPositions[i - 1] - gap;
+        }
+
+        // Move leader.
+        _nextPositions[0] =
+            _currentPositions[0] + slowMoveSpeed * dt;
+
+        // Move followers.
+        for (int i = 1; i < count; i++)
+        {
+            double freePosition =
+                _currentPositions[i] + fastMoveSpeed * dt;
+
+            double maxAllowedPosition =
+                _nextPositions[i - 1] - distanceBetweenPoints;
+
+            _nextPositions[i] =
+                Math.Min(freePosition, maxAllowedPosition);
+        }
+
+        // Save normalized positions.
+        for (int i = 0; i < count; i++)
         {
             T point = _orderedPoints[i];
-            float currentPosition = _pointPositions[point];
-            float distanceToPrevious = GetForwardDistance(currentPosition, previousPosition);
 
-            float currentSpeed = distanceToPrevious > distanceBetweenPoints
-                ? fastMoveSpeed
-                : previousSpeed;
+            double position = Normalize(_nextPositions[i]);
 
-            float nextPosition = Normalize(currentPosition + currentSpeed * deltaTime);
-            float nextDistanceToPrevious = GetForwardDistance(nextPosition, previousPosition);
-
-            if (nextDistanceToPrevious < distanceBetweenPoints)
-            {
-                nextPosition = GetPositionBehind(previousPosition, distanceBetweenPoints);
-                currentSpeed = previousSpeed;
-            }
-
-            _pointPositions[point] = nextPosition;
-            previousPosition = nextPosition;
-            previousSpeed = currentSpeed;
+            _positions[point] = position;
+            _pointPositions[point] = (float)position;
         }
     }
 
-    private int GetInsertIndex(float position)
+    private void AddPosition(T point, double position)
     {
-        float leaderPosition = _pointPositions[_orderedPoints[0]];
-        float newDistanceFromLeader = GetForwardDistance(position, leaderPosition);
+        _positions.Add(point, position);
+        _pointPositions.Add(point, (float)position);
+    }
+
+    private int GetInsertIndex(double position)
+    {
+        double leaderPosition = _positions[_orderedPoints[0]];
+
+        double newDistance =
+            GetForwardDistance(position, leaderPosition);
 
         for (int i = 1; i < _orderedPoints.Count; i++)
         {
-            float currentPosition = _pointPositions[_orderedPoints[i]];
-            float currentDistanceFromLeader = GetForwardDistance(currentPosition, leaderPosition);
+            double currentDistance = GetForwardDistance(
+                _positions[_orderedPoints[i]],
+                leaderPosition);
 
-            if (newDistanceFromLeader < currentDistanceFromLeader)
+            if (newDistance < currentDistance)
                 return i;
         }
 
         return _orderedPoints.Count;
     }
 
-    private bool HasEnoughSpace(int insertIndex, float position)
+    private bool HasEnoughSpace(int insertIndex, double position)
     {
-        float previousPosition = _pointPositions[_orderedPoints[insertIndex - 1]];
-        float distanceToPrevious = GetForwardDistance(position, previousPosition);
+        T previousPoint = _orderedPoints[insertIndex - 1];
 
-        if (distanceToPrevious < distanceBetweenPoints)
-            return false;
+        int nextIndex =
+            insertIndex >= _orderedPoints.Count ? 0 : insertIndex;
 
-        if (insertIndex >= _orderedPoints.Count)
-            return true;
+        T nextPoint = _orderedPoints[nextIndex];
 
-        float nextPosition = _pointPositions[_orderedPoints[insertIndex]];
-        float distanceToNext = GetForwardDistance(nextPosition, position);
-        return distanceToNext >= distanceBetweenPoints;
+        double distanceToPrevious = GetForwardDistance(
+            position,
+            _positions[previousPoint]);
+
+        double distanceToNext = GetForwardDistance(
+            _positions[nextPoint],
+            position);
+
+        return distanceToPrevious + SPACE_EPSILON >= distanceBetweenPoints
+            && distanceToNext + SPACE_EPSILON >= distanceBetweenPoints;
     }
 
-    private static float Normalize(float position)
+    private void EnsureBufferCapacity(int capacity)
     {
-        position %= 1f;
+        if (_currentPositions.Length >= capacity)
+            return;
 
-        if (position < 0f)
-            position += 1f;
+        Array.Resize(ref _currentPositions, capacity);
+        Array.Resize(ref _nextPositions, capacity);
+    }
+
+    private static double Normalize(double position)
+    {
+        position %= 1.0;
+
+        if (position < 0.0)
+            position += 1.0;
 
         return position;
     }
 
-    private static float GetForwardDistance(float fromPosition, float toPosition)
+    private static double GetForwardDistance(
+        double fromPosition,
+        double toPosition)
     {
         return Normalize(toPosition - fromPosition);
     }
 
-    private static float GetPositionBehind(float position, float distance)
+    private static void ValidatePosition(float position)
     {
-        return Normalize(position - distance);
+        if (float.IsNaN(position) || float.IsInfinity(position))
+            throw new ArgumentOutOfRangeException(nameof(position));
+    }
+
+    private static void ValidateSpeed(float speed, string parameterName)
+    {
+        if (speed < 0f || float.IsNaN(speed) || float.IsInfinity(speed))
+            throw new ArgumentOutOfRangeException(parameterName);
     }
 }

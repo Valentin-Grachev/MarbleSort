@@ -26,21 +26,20 @@ public class BallView : MonoBehaviour
         transform.DOLocalMove(Vector3.zero, DURATION).SetEase(Ease.OutQuad);
     }
 
-    public void AnimateMoveToBallTargetPlace(Transform placeTransform, Action onCompleted)
+    public void AnimateMoveToReceiverCell(Transform cellTransform, Action onCompleted)
     {
         const float DURATION = 0.4f;
 
-        transform.SetParent(placeTransform.transform, worldPositionStays: true);
+        transform.SetParent(cellTransform.transform, worldPositionStays: true);
         transform.DOLocalJump(Vector3.zero, 1, 1, DURATION).SetEase(Ease.OutQuad)
             .OnComplete(() => onCompleted?.Invoke());
     }
 
 
-
     public void SetPhysics(bool enable)
     {
-        _rigidbody.simulated = enable;
-        _collider.enabled = enable;
+        _rigidbody.bodyType = enable ? RigidbodyType2D.Dynamic : RigidbodyType2D.Kinematic;
+        if (!enable) _rigidbody.linearVelocity = Vector2.zero;
     }
 
 

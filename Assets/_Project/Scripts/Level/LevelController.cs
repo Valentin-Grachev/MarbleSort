@@ -3,23 +3,21 @@ using UnityEngine;
 
 public class LevelController
 {
-    private List<ReceiverQueue> _receiverQueues;
+    public readonly List<ReceiverQueue> ReceiverQueues;
+    public readonly ConveyerView Conveyer;
 
     private readonly Grid emitterGrid;
 
 
 
-    public LevelController(Grid emitterGrid, List<BallTrigger> receiverTriggers)
+    public LevelController(Grid emitterGrid, ConveyerView conveyer, List<BallTrigger> receiverTriggers)
     {
-        this.emitterGrid = emitterGrid; 
+        this.emitterGrid = emitterGrid;
+        Conveyer = conveyer;
 
-        _receiverQueues = new List<ReceiverQueue>();
-        for (int i = 0; i < receiverTriggers.Count; i++)
-        {
-            var headPosition = receiverTriggers[i].transform.position;
-            _receiverQueues.Add(new ReceiverQueue(headPosition));
-        }
-
+        ReceiverQueues = new List<ReceiverQueue>();
+        foreach (var receiverTrigger in receiverTriggers)
+            ReceiverQueues.Add(new ReceiverQueue(receiverTrigger));
     }
 
 
@@ -43,7 +41,7 @@ public class LevelController
         for (int i = 0; i < levelData.receivers.Count; i++)
         {
             var receiverData = levelData.receivers[i];
-            _receiverQueues[i].Initialize(receiverData.colorTypes);
+            ReceiverQueues[i].Initialize(receiverData.colorTypes);
         }
     }
 

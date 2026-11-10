@@ -1,9 +1,9 @@
 using UnityEngine;
-using UnityEngine.Playables;
 using UnityEngine.Splines;
 
 public class ConveyerView : MonoBehaviour
 {
+    [SerializeField] private BallTrigger _inputBallTrigger;
     [SerializeField] private SpriteRenderer _placeRendererPrefab;
     [SerializeField] private SplineContainer _spline;
     [SerializeField] private Color _placeColor1;
@@ -12,6 +12,7 @@ public class ConveyerView : MonoBehaviour
     private CycleMovingProcessor<SpriteRenderer> _placeMovingProcessor;
 
     public SplineContainer MovingSpline => _spline;
+    public BallTrigger InputBallTrigger => _inputBallTrigger;
 
 
     private void Start() => CreatePlaces();
@@ -34,6 +35,11 @@ public class ConveyerView : MonoBehaviour
         {
             var placeRenderer = Instantiate(_placeRendererPrefab, transform);
             _placeMovingProcessor.AddPoint(placeRenderer, normalizedPosition);
+
+            var color = i % 6 == 0 || i % 6 == 1 || i % 6 == 2 ?
+                _placeColor1 : _placeColor2;
+
+            placeRenderer.color = color;
 
             normalizedPosition += distanceBetweenPlaces;
         }

@@ -10,7 +10,6 @@ namespace UNodes.Project
         [SerializeField] private Camera _camera;
         [SerializeField] private ConveyerView _conveyer;
         [SerializeField] private Grid _emitterGrid;
-        [SerializeField] private BallTrigger _conveyerTrigger;
         [SerializeField] private List<BallTrigger> _receiverTriggers;
         [Header("Prefabs:")]
         [SerializeField] private BallView _ballPrefab;
@@ -24,11 +23,8 @@ namespace UNodes.Project
 
 
             var input = Register(new InputController(_camera));
-            var level = Register(new LevelController(_emitterGrid, _receiverTriggers));
-
-            var conveyer = Register(new ConveyerController
-                (_conveyer, _conveyerTrigger, _receiverTriggers));
-
+            var level = Register(new LevelController(_emitterGrid, _conveyer, _receiverTriggers));
+            var conveyer = Register(new ConveyerController(level));
             var start = Register(new StartController(level));
 
 

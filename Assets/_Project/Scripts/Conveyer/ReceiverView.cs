@@ -30,29 +30,13 @@ public class ReceiverView : MonoBehaviour
         _spriteRenderer.color = color;
 
         foreach (var insideBallRenderer in _insideBallRenderers)
-            insideBallRenderer.color = color;
-    }
-
-
-
-
-    public void PutBall(BallView ball, Action onCompleted)
-    {
-        int placeIndex = _currentBalls;
-
-        var targetTransform = _insideBallRenderers[placeIndex].transform;
-
-        ball.AnimateMoveToBallTargetPlace(targetTransform, onCompleted: () =>
         {
-            Pools.Balls.Return(ball);
-            _insideBallRenderers[placeIndex].gameObject.SetActive(true);
-        });
-
-        _currentBalls++;
-
-        if (_currentBalls == MAX_BALLS)
-            AnimateFinish(() => Pools.Receivers.Return(this));
+            insideBallRenderer.enabled = false;
+            insideBallRenderer.color = color;
+        }
+            
     }
+
 
     private void AnimateFinish(Action onCompleted)
     {

@@ -44,6 +44,12 @@ TagManager:
   - name: Level
     uniqueID: 2092799445
     locked: 0
+  - name: Emitter
+    uniqueID: 404944503
+    locked: 0
+  - name: Ball
+    uniqueID: 3440950875
+    locked: 0
   - name: Receiver
     uniqueID: 1035034049
     locked: 0

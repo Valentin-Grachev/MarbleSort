@@ -15,15 +15,13 @@ public class ConveyerController : IUpdateHandler
 
     private const int RECEIVERS_AMOUNT = 4;
 
-    private readonly ConveyerView conveyer;
+    private readonly LevelController levelController;
     private readonly CycleMovingProcessor<ConveyerCell> cellMovingProcessor;
-    private readonly List<ReceiverQueue> receiverQueues;
 
 
-    public ConveyerController(ConveyerView conveyer, 
-        BallTrigger conveyerBallTrigger, List<BallTrigger> receiverTriggers)
+    public ConveyerController(LevelController levelController)
     {
-        this.conveyer = conveyer;
+        this.levelController = levelController;
 
         float ballNormalizedDistance = 1f / Configs.Rules.ConveyerMaxBalls;
 
@@ -32,19 +30,13 @@ public class ConveyerController : IUpdateHandler
             Configs.Rules.ConveyerFastNormalizedSpeed, 
             Configs.Rules.ConveyerMaxBalls);
 
+        var inputBallTrigger = levelController.Conveyer.InputBallTrigger;
+        inputBallTrigger.OnBallEnter += OnConveyerBallEnter;
+        inputBallTrigger.OnBallExit += OnConveyerBallExit;
 
-        conveyerBallTrigger.OnBallEnter += OnConveyerBallEnter;
-        conveyerBallTrigger.OnBallExit += OnConveyerBallExit;
-
-        receiverQueues = new(RECEIVERS_AMOUNT);
-
-        for (int i = 0; i < RECEIVERS_AMOUNT; i++)
+        foreach (var receiverQueue in levelController.ReceiverQueues)
         {
-            var trigger = receiverTriggers[i];
-            var receiverQueue = new ReceiverQueue(trigger.transform.position);
-
-            trigger.OnBallEnter += OnReceiverBallEnter;
-            receiverQueues.Add(receiverQueue);
+            receiverQueue.BallTrigger.OnBallEnter += OnReceiverBallEnter;
 
             void OnReceiverBallEnter(BallView ball)
                 => OnReceiverQueueBallEnter(receiverQueue, ball);
@@ -60,7 +52,7 @@ public class ConveyerController : IUpdateHandler
 
     private void OnReceiverQueueBallEnter(ReceiverQueue receiverQueue, BallView ball)
     {
-
+        Debug.Log(receiverQueue.TopColorType);
     }
 
     private void OnConveyerBallEnter(BallView ball)
@@ -81,8 +73,8 @@ public class ConveyerController : IUpdateHandler
 
         foreach (var cellPoint in cellMovingProcessor.PointPositions)
         {
-            cellPoint.Key.transform.position =
-                conveyer.MovingSpline.EvaluatePosition(cellPoint.Value);
+            cellPoint.Key.transform.position = levelController.Conveyer
+                .MovingSpline.EvaluatePosition(cellPoint.Value);
         }
     }
 
@@ -96,13 +88,13 @@ public class ConveyerController : IUpdateHandler
         {
             if (cellMovingProcessor.AddPointIsAvailable(inputNormalizedPosition))
             {
-                AddBallToConveyer(ball, inputNormalizedPosition);
+                PutBallToConveyer(ball, inputNormalizedPosition);
                 break;
             }
         }
     }
 
-    private void AddBallToConveyer(BallView ball, float normalizedPosition)
+    private void PutBallToConveyer(BallView ball, float normalizedPosition)
     {
         var cell = new ConveyerCell()
         {
@@ -110,8 +102,8 @@ public class ConveyerController : IUpdateHandler
             transform = Pools.ConveyerCells.Get(),
         };
 
-        cell.transform.position = 
-            conveyer.MovingSpline.EvaluatePosition(normalizedPosition);
+        cell.transform.position = levelController.Conveyer
+            .MovingSpline.EvaluatePosition(normalizedPosition);
 
         cellMovingProcessor.AddPoint(cell, normalizedPosition);
         ball.AnimateMoveToConveyerCell(cell.transform);
@@ -119,6 +111,12 @@ public class ConveyerController : IUpdateHandler
 
         _inputBalls.Remove(ball);
     }
+
+    private void PutBallToReceiver(BallView ball, ReceiverView receiver)
+    {
+
+    }
+
 
 
 

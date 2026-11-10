@@ -5,15 +5,15 @@ public class ReceiverQueue
 {
     private Queue<ReceiverView> _receiverQueue = new();
 
-    private readonly Vector2 headWorldPosition;
+    public readonly BallTrigger BallTrigger;
 
     public bool HasReceivers => _receiverQueue.Count > 0;
     public ColorType TopColorType => _receiverQueue.Peek().ColorType;
 
 
-    public ReceiverQueue(Vector2 headWorldPosition)
+    public ReceiverQueue(BallTrigger ballTrigger)
     {
-        this.headWorldPosition = headWorldPosition;
+        BallTrigger = ballTrigger;
     }
 
 
@@ -31,8 +31,10 @@ public class ReceiverQueue
             var receiver = Pools.Receivers.Get();
             receiver.Initialize(colorType);
 
-            receiver.transform.position = 
-                headWorldPosition + Vector2.down * i * Configs.Rules.ReceiverDistanceY; ;
+            Vector2 topPosition = BallTrigger.transform.position;
+
+            receiver.transform.position =
+                 topPosition + Vector2.down * i * Configs.Rules.ReceiverDistanceY;
 
             _receiverQueue.Enqueue(receiver);
         }
