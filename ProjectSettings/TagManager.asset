@@ -47,11 +47,14 @@ TagManager:
   - name: Emitter
     uniqueID: 404944503
     locked: 0
+  - name: Receiver
+    uniqueID: 1035034049
+    locked: 0
   - name: Ball
     uniqueID: 3440950875
     locked: 0
-  - name: Receiver
-    uniqueID: 1035034049
+  - name: UI
+    uniqueID: 970287801
     locked: 0
   m_RenderingLayers:
   - Default

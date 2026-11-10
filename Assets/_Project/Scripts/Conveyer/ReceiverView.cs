@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
-using UNodes;
 
 public class ReceiverView : MonoBehaviour
 {
@@ -10,20 +9,23 @@ public class ReceiverView : MonoBehaviour
     [SerializeField] private SpriteRenderer _spriteRenderer;
     [SerializeField] private List<SpriteRenderer> _insideBallRenderers;
 
-    private readonly Holder<LevelController> levelController = new();
-
-    private int _currentBalls = 0;
     private Tween _finishTween;
+    private int _currentBalls;
+    private int _displayedBalls;
 
     private const int MAX_BALLS = 3;
 
+
     public ColorType ColorType { get; private set; }
-    public bool IsFinished => _currentBalls >= MAX_BALLS;
+    public bool IsFull => _currentBalls >= MAX_BALLS;
+    public bool IsDisplayFull => _displayedBalls >= MAX_BALLS;
+    public int BallsAmount => _currentBalls;
 
 
     public void Initialize(ColorType colorType)
     {
         ColorType = colorType;
+        _currentBalls = 0;
 
         var color = Configs.Colors.GetColor(colorType);
 
@@ -37,12 +39,24 @@ public class ReceiverView : MonoBehaviour
             
     }
 
-
-    private void AnimateFinish(Action onCompleted)
+    public void DisplayBallFullness(int balls)
     {
-        const float DURATION = 0.5f;
+        _displayedBalls = balls;
 
-        _containerTransform.DOScale(0f, DURATION).SetEase(Ease.OutQuad);
+        for (int i = 0; i < _insideBallRenderers.Count; i++)
+            _insideBallRenderers[i].enabled = i < balls;
+    }
+
+    public Transform GetCurrentCellTransform()
+        => _insideBallRenderers[_currentBalls].transform;
+
+    public void IncreaseBallCount() => _currentBalls++;
+
+
+    public void AnimateFinish(Action onCompleted = null)
+    {
+        float duration = Configs.Rules.ReceiverFinishDuration;
+        _containerTransform.DOScale(0f, duration).SetEase(Ease.OutQuad);
     }
 
 

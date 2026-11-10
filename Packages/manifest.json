@@ -6,6 +6,7 @@
     "com.unity.splines": "2.9.2",
     "com.unity.ugui": "2.0.0",
     "com.unodes": "https://github.com/Valentin-Grachev/UNodes.git?path=Packages/com.unodes",
+    "com.wooshii.hierarchydecorator": "https://github.com/WooshiiDev/HierarchyDecorator.git",
     "com.unity.modules.audio": "1.0.0",
     "com.unity.modules.imageconversion": "1.0.0",
     "com.unity.modules.imgui": "1.0.0",

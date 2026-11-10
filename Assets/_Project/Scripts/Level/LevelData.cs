@@ -16,6 +16,5 @@ using UnityEngine;
 [Serializable] public struct LevelData
 {
     public List<EmitterData> emitters;
-    public List<Vector2Int> hiddenPositions;
     public List<ReceiverData> receivers;
 }

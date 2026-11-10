@@ -12,8 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b4c66ddb2592fe4aaf26cf44e9a3fc2, type: 3}
   m_Name: Rules
   m_EditorClassIdentifier: Assembly-CSharp::RulesConfig
+  <EmitterOneBallEmitDuration>k__BackingField: 0.25
+  <EmitterBallEmitDelay>k__BackingField: 0.05
+  <EmitterBallStartVelocityY>k__BackingField: -4
   <ConveyerMaxBalls>k__BackingField: 24
-  <ConveyerNormalizedSpeed>k__BackingField: 0.22
+  <ConveyerNormalizedSpeed>k__BackingField: 0.26
   <ConveyerFastNormalizedSpeed>k__BackingField: 0.4
   <ConveyerInputNormalizedRange>k__BackingField: {x: 0.77, y: 0.86}
+  <BallMoveToConveyerDuration>k__BackingField: 0.25
   <ReceiverDistanceY>k__BackingField: 0.83
+  <ReceiverMoveDuration>k__BackingField: 0.2
+  <ReceiverFinishDuration>k__BackingField: 0.5
+  <BallMoveToReceiverDuration>k__BackingField: 0.3

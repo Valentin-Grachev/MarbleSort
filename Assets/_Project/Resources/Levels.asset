@@ -22,11 +22,34 @@ MonoBehaviour:
       colorType: 2
     - gridPosition: {x: -1, y: 0}
       colorType: 3
+    - gridPosition: {x: 1, y: 1}
+      colorType: 4
+    - gridPosition: {x: 0, y: 1}
+      colorType: 5
+    hiddenPositions: []
+    receivers:
+    - colorTypes: 0000000001000000020000000300000004000000
+    - colorTypes: 0200000001000000000000000400000005000000
+    - colorTypes: 01000000020000000000000005000000
+    - colorTypes: 03000000040000000500000003000000
+  - emitters:
+    - gridPosition: {x: 0, y: 0}
+      colorType: 0
+    - gridPosition: {x: 1, y: 0}
+      colorType: 1
+    - gridPosition: {x: 2, y: 0}
+      colorType: 2
+    - gridPosition: {x: -1, y: 0}
+      colorType: 3
     - gridPosition: {x: -2, y: 0}
+      colorType: 4
+    - gridPosition: {x: -2, y: 1}
+      colorType: 4
+    - gridPosition: {x: -2, y: 1}
       colorType: 4
     hiddenPositions: []
     receivers:
-    - colorTypes: 0000000001000000
-    - colorTypes: 0200000003000000
-    - colorTypes: 0300000004000000
-    - colorTypes: 0000000003000000
+    - colorTypes: 00000000
+    - colorTypes: 020000000300000003000000030000000100000003000000
+    - colorTypes: 03000000040000000200000000000000
+    - colorTypes: 

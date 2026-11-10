@@ -11,6 +11,7 @@ public class CycleMovingProcessor<TPointComponent> where TPointComponent : class
     }
 
     private List<PointState> _orderedPoints = new();
+    private List<float> _occupiedInputPositions = new();
 
 
     private readonly int maxPoints;
@@ -18,13 +19,14 @@ public class CycleMovingProcessor<TPointComponent> where TPointComponent : class
     private readonly float pointInsertRadius;
     private readonly float slowMoveSpeed;
     private readonly float fastMoveSpeed;
-    private readonly Vector2 insertRange;
 
-    public IReadOnlyList<PointState> PointStates => _orderedPoints;
+
+    public List<PointState> PointStates => _orderedPoints;
 
 
     public CycleMovingProcessor(float slowMoveSpeed, float fastMoveSpeed, int maxPoints)
     {
+
         this.maxPoints = maxPoints;
         this.slowMoveSpeed = slowMoveSpeed;
         this.fastMoveSpeed = fastMoveSpeed;
@@ -40,17 +42,10 @@ public class CycleMovingProcessor<TPointComponent> where TPointComponent : class
 
     public void InsertPointToRange(TPointComponent component, float from, float to, out float position)
     {
-        if (_orderedPoints.Count == 0)
-        {
-            position = (from + to) / 2f;
-            InsertPoint(component, position);
-        }
-        else
-        {
-            bool success = TryFindPositionForInsertPointInRange(from, to, out position);
-            if (success) InsertPoint(component, position);
-            else throw new Exception("No space enough for insert!");
-        }
+        bool success = TryFindPositionForInsertPointInRange(from, to, out position);
+
+        if (success) InsertPoint(component, position);
+        else throw new Exception("No space enough for insert!");
     }
 
     public void InsertPoint(TPointComponent component, float position)
@@ -67,7 +62,8 @@ public class CycleMovingProcessor<TPointComponent> where TPointComponent : class
 
     public void RemovePoint(TPointComponent component)
     {
-
+        var pointState = _orderedPoints.Find(pointState => pointState.component == component);
+        _orderedPoints.Remove(pointState);
     }
 
 
@@ -76,74 +72,73 @@ public class CycleMovingProcessor<TPointComponent> where TPointComponent : class
     {
         if (_orderedPoints.Count == 0) return;
 
-        float slowMovement = slowMoveSpeed * deltaTime;
-        float fastMovement = fastMoveSpeed * deltaTime;
+        float maxMovement = pointMoveDistance * 0.45f;
+
+        float slowMovement = Mathf.Min(slowMoveSpeed * deltaTime, maxMovement);
+        float fastMovement = Mathf.Min(fastMoveSpeed * deltaTime, maxMovement);
 
         var headPointState = _orderedPoints[0];
-
-        headPointState.position = (headPointState.position + slowMovement) % 1f;
+        headPointState.position = CyclePosition(headPointState.position + slowMovement);
 
         for (int i = 1; i < _orderedPoints.Count; i++)
         {
             var pointState = _orderedPoints[i];
 
-            float currentDistanceToHead = GetForwardDistance
-                (pointState.position, headPointState.position);
-
             float targetDistanceToHead = pointMoveDistance * i;
 
-            bool useFastSpeed = currentDistanceToHead > targetDistanceToHead;
-            float movement = useFastSpeed ? fastMovement : slowMovement;
+            float newPosition = CyclePosition(pointState.position + fastMovement);
+            float newDistanceToHead = GetForwardDistance(newPosition, headPointState.position);
 
-            pointState.position = (pointState.position + movement) % 1f;
+            if (newDistanceToHead < targetDistanceToHead)
+                pointState.position = CyclePosition(headPointState.position - targetDistanceToHead);
+
+            else pointState.position = newPosition;
         }
     }
 
 
-    public void Clear()
-    {
+    public void Clear() => _orderedPoints.Clear();
 
-    }
 
 
     private bool TryFindPositionForInsertPointInRange
-        (float minBorder, float maxBorder, out float result)
+        (float minBorder, float maxBorder, out float insertPosition)
     {
-        result = 0f;
+        insertPosition = 0f;
+
+        _occupiedInputPositions?.Clear();
+        _occupiedInputPositions.Add(minBorder);
+        _occupiedInputPositions.Add(maxBorder);
 
         float minFilterPosition = minBorder - pointInsertRadius;
         float maxFilterPosition = maxBorder + pointInsertRadius;
-        float pointDiameter = pointInsertRadius * 2f;
 
-        float candidatePosition = minBorder + pointInsertRadius;
-
-        while (candidatePosition + pointInsertRadius <= maxBorder)
+        foreach (var pointState in _orderedPoints)
         {
-            bool positionIsDefined = true;
+            float pointPosition = pointState.position;
 
-            foreach (var pointState in _orderedPoints)
+            if (minFilterPosition <= pointPosition && pointPosition <= maxFilterPosition)
+                _occupiedInputPositions.Add(pointState.position);
+        }
+
+        _occupiedInputPositions.Sort();
+
+        float maxDistance = 0f;
+        for (int i = 0; i < _occupiedInputPositions.Count - 1; i++)
+        {
+            float from = _occupiedInputPositions[i];
+            float to = _occupiedInputPositions[i + 1];
+            float distance = to - from;
+
+            if (maxDistance < distance)
             {
-                float pointPosition = pointState.position;
-
-                if (pointPosition < minFilterPosition || maxFilterPosition < pointPosition)
-                    continue;
-
-                float distance = Mathf.Abs(candidatePosition - pointPosition);
-
-                if (distance < pointDiameter)
-                {
-                    candidatePosition = pointPosition + pointDiameter;
-                    positionIsDefined = false;
-                    break;
-                }
-            }
-
-            if (positionIsDefined)
-            {
-                result = candidatePosition;
-                return true;
+                maxDistance = distance;
+                insertPosition = (from + to) / 2f;
             }
         }
+
+        if (maxDistance > pointInsertRadius * 4f)
+            return true;
 
         return false;
     }
@@ -171,6 +166,13 @@ public class CycleMovingProcessor<TPointComponent> where TPointComponent : class
     private float GetForwardDistance(float from, float to)
         => from < to ? to - from : 1f - from + to;
 
+    private float CyclePosition(float position)
+    {
+        float result = position % 1f;
+        if (result < 0f) result += 1f;
+
+        return result;
+    }
 
 
 }

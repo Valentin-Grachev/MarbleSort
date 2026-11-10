@@ -4,7 +4,7 @@ using UnityEngine;
 public class BallTrigger : MonoBehaviour
 {
     public event Action<BallView> OnBallEnter;
-    public event Action<BallView> OnBallExit;
+    //public event Action<BallView> OnBallExit;
 
 
 
@@ -23,7 +23,7 @@ public class BallTrigger : MonoBehaviour
             return;
 
         var ball = collision.gameObject.GetComponent<BallView>();
-        OnBallExit?.Invoke(ball);
+        //OnBallExit?.Invoke(ball);
     }
 
 

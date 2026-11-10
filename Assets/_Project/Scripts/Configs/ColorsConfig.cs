@@ -11,6 +11,7 @@ public enum ColorType
     Green = 2,
     Blue = 3,
     Yellow = 4,
+    Purple = 5,
 }
 
 

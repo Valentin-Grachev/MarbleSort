@@ -6,6 +6,7 @@ namespace UNodes.Project
 {
     public class HolderRegistrator : BaseHolderRegistrator
     {
+        [SerializeField] private EnableValue<int> _targetFrameRate;
         [Header("Scene:")]
         [SerializeField] private Camera _camera;
         [SerializeField] private ConveyerView _conveyer;
@@ -19,12 +20,14 @@ namespace UNodes.Project
 
         public override void RegisterItems(Action onRegistered)
         {
+            Application.targetFrameRate = _targetFrameRate.enabled ?
+                _targetFrameRate.value : 1000;
+
             new Pools(_ballPrefab, _emitterPrefab, _receiverPrefab);
 
-
+            var level = Register(new LevelController());
             var input = Register(new InputController(_camera));
-            var level = Register(new LevelController(_emitterGrid, _conveyer, _receiverTriggers));
-            var conveyer = Register(new ConveyerController(level));
+            var conveyer = Register(new ConveyerController(level, _emitterGrid, _conveyer, _receiverTriggers));
             var start = Register(new StartController(level));
 
 

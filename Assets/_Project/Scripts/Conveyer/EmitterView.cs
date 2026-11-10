@@ -17,34 +17,30 @@ public class EmitterView : MonoBehaviour
     private ColorType _colorType;
 
     private const float UNPACK_WIDTH = 0.7f;
-    private const float UNPACK_HEIGHT = 0.5f;
-    private const float UNPACK_ROW_DELAY = 0.15f;
-    private const float UNPACK_MOVE_DURATION = 0.2f;
+    private const float UNPACK_HEIGHT = 0.7f;
+    private const float UNPACK_OFFSET_Y = 0.2f;
+    private const float FROM_UNPACK_POSITION_PART = 0.4f;
 
     private const float BOX_CLICK_DURATION = 0.4f;
     private const float BOX_CLICK_TO_SCALE = 0.7f;
     private const float BOX_HIDE_DURATION = 0.4f;
 
 
-    private const int BALLS_PER_ROW = 3;
-    private const int ROWS_AMOUNT = 3;
-
-
     private readonly Holder<LevelController> levelController = new();
 
     private readonly List<Vector2> UNPACK_POSITIONS = new()
     {
-        new Vector2(-UNPACK_WIDTH, -UNPACK_HEIGHT),
-        new Vector2(0f, -UNPACK_HEIGHT),
-        new Vector2(UNPACK_WIDTH, -UNPACK_HEIGHT),
+        new Vector2(-UNPACK_WIDTH, UNPACK_OFFSET_Y - UNPACK_HEIGHT),
+        new Vector2(0f, UNPACK_OFFSET_Y - UNPACK_HEIGHT),
+        new Vector2(UNPACK_WIDTH, UNPACK_OFFSET_Y - UNPACK_HEIGHT),
 
-        new Vector2(-UNPACK_WIDTH, 0f),
-        new Vector2(0f, 0f),
-        new Vector2(UNPACK_WIDTH, 0f),
+        new Vector2(-UNPACK_WIDTH, UNPACK_OFFSET_Y),
+        new Vector2(0f, UNPACK_OFFSET_Y),
+        new Vector2(UNPACK_WIDTH, UNPACK_OFFSET_Y),
 
-        new Vector2(-UNPACK_WIDTH, UNPACK_HEIGHT),
-        new Vector2(0f, UNPACK_HEIGHT),
-        new Vector2(UNPACK_WIDTH, UNPACK_HEIGHT),
+        new Vector2(-UNPACK_WIDTH, UNPACK_OFFSET_Y + UNPACK_HEIGHT),
+        new Vector2(0f, UNPACK_OFFSET_Y + UNPACK_HEIGHT),
+        new Vector2(UNPACK_WIDTH, UNPACK_OFFSET_Y + UNPACK_HEIGHT),
     };
 
     
@@ -66,24 +62,30 @@ public class EmitterView : MonoBehaviour
         _colorType = colorType;
         _boxRenderer.sprite = _fullBoxSprite;
         _boxRenderer.color = Configs.Colors.GetColor(colorType);
+        _boxTransform.transform.localScale = Vector3.one;
+        _worldButton.SetInteractable(true);
     }
 
 
 
-    private void OnClick() => Unpack();
+    private void OnClick() => EmitBalls();
 
-    private void Unpack()
+    private void EmitBalls()
     {
         AnimateClickBox();
+
+        _worldButton.SetInteractable(false);
 
         _unpackBallTween?.Kill();
         var sequence = DOTween.Sequence();
 
-        for (int i = 0; i < ROWS_AMOUNT; i++)
+        for (int i = 0; i < UNPACK_POSITIONS.Count; i++)
         {
-            sequence.Append(AnimateSpawnBallRow(i));
+            int index = i;
+            sequence.AppendCallback(() => AnimateSpawnBall(index));
+            sequence.AppendInterval(Configs.Rules.EmitterBallEmitDelay);
 
-            if (i == ROWS_AMOUNT - 1)
+            if (i == UNPACK_POSITIONS.Count - 1)
                 sequence.JoinCallback(() => _boxRenderer.sprite = _emptyBoxSprite);
         }
 
@@ -95,39 +97,33 @@ public class EmitterView : MonoBehaviour
         _unpackBallTween = sequence;
     }
 
-    private Tween AnimateSpawnBallRow(int rowIndex)
+    private Tween AnimateSpawnBall(int index)
     {
-        var sequence = DOTween.Sequence();
+        BallView ball = Pools.Balls.Get();
 
-        for (int i = 0; i < BALLS_PER_ROW; i++)
-        {
-            BallView ball = Pools.Balls.Get();
+        var targetPosition = UNPACK_POSITIONS[index];
 
-            ball.Initialize(_colorType);
-            ball.transform.SetParent(transform, worldPositionStays: false);
-            ball.transform.localPosition = Vector3.zero;
-            ball.transform.localScale = Vector3.zero;
+        ball.Initialize(_colorType);
+        ball.transform.SetParent(transform, worldPositionStays: false);
+        ball.transform.localPosition = targetPosition * FROM_UNPACK_POSITION_PART;
+        ball.transform.localScale = Vector3.zero;
 
-            ball.SetPhysics(false);
+        ball.SetPhysics(false);
 
-            var targetPosition = UNPACK_POSITIONS[rowIndex * BALLS_PER_ROW + i];
+        float duration = Configs.Rules.EmitterOneBallEmitDuration;
 
-            var scaleTween = ball.transform.DOScale(1f, UNPACK_MOVE_DURATION)
-                .SetEase(Ease.OutQuad);
+        var scaleTween = ball.transform.DOScale(1f, duration).SetEase(Ease.OutQuad);
 
-            var moveTween = ball.transform.DOLocalMove(targetPosition, UNPACK_MOVE_DURATION)
-                .SetEase(Ease.OutQuad).OnComplete(() =>
-                {
-                    ball.SetPhysics(true);
-                    ball.transform.SetParent(Pools.Balls.Container);
-                });
+        var moveTween = ball.transform.DOLocalJump(targetPosition, 0.3f, 1, duration)
+            .SetEase(Ease.InFlash).OnComplete(() =>
+            {
+                ball.SetPhysics(true, Vector2.up * Configs.Rules.EmitterBallStartVelocityY);
+                ball.transform.SetParent(Pools.Balls.Container);
+            });
 
-            sequence.Join(moveTween);
-            sequence.Join(scaleTween);
-        }
-
-        return sequence;
+        return DOTween.Sequence().Append(scaleTween).Join(moveTween);
     }
+
 
     private void AnimateClickBox()
     {

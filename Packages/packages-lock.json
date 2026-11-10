@@ -260,6 +260,13 @@
       "dependencies": {},
       "hash": "88bcb0fd4cde036394f44a7109db431208c41161"
     },
+    "com.wooshii.hierarchydecorator": {
+      "version": "https://github.com/WooshiiDev/HierarchyDecorator.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "ddda39c092ad50a8d424b58da2b88c15d3f312b1"
+    },
     "com.unity.modules.animation": {
       "version": "1.0.0",
       "depth": 2,
