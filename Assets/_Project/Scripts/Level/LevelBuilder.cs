@@ -17,16 +17,34 @@ public class LevelBuilder
     public void BuildLevel(LevelData levelData)
     {
         // <-- Create Emitters -->
+        Dictionary<Vector2Int, EmitterView> createdEmitters = new();
         Pools.Emitters.Clear();
+
         foreach (var emitterData in levelData.emitters)
         {
             var emitter = Pools.Emitters.Get();
 
-            Vector3Int position = (Vector3Int)emitterData.gridPosition;
-            emitter.transform.position = emitterGrid.GetCellCenterWorld(position);
+            var position = emitterData.gridPosition;
+            emitter.transform.position = emitterGrid.GetCellCenterWorld((Vector3Int)position);
 
-            emitter.Initialize(emitterData.colorType);
+            bool isUnlocked = position.y == 0;
+
+            emitter.Initialize(emitterData.colorType, isUnlocked);
+            createdEmitters.Add(position, emitter);
         }
+
+        // <-- Bind Unlockable Emitters -->
+        foreach (var createdEmitter in createdEmitters)
+        {
+            var overPosition = new Vector2Int(createdEmitter.Key.x, createdEmitter.Key.y + 1);
+
+            if (createdEmitters.ContainsKey(overPosition))
+            {
+                var unlockableEmitter = createdEmitters[overPosition];
+                createdEmitter.Value.BindUnlockableEmitter(unlockableEmitter);
+            }
+        }
+
 
         // <-- Create Receivers -->
         for (int i = 0; i < levelData.receivers.Count; i++)

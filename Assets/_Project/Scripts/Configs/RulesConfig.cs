@@ -5,6 +5,7 @@ using UnityEngine;
 public class RulesConfig : ScriptableObject
 {
     [field: Header("Emitters:")]
+    [field: SerializeField] public float EmitterUnlockDuration { get; private set; } = 0.3f;
     [field: SerializeField] public float EmitterOneBallEmitDuration { get; private set; } = 0.25f;
     [field: SerializeField] public float EmitterBallEmitDelay { get; private set; } = 0.1f;
     [field: SerializeField] public float EmitterBallStartVelocityY { get; private set; } = -2f;

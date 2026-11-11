@@ -6,15 +6,18 @@ using UNodes;
 
 public class EmitterView : MonoBehaviour
 {
-    [SerializeField] private WorldButton _worldButton;
+    [SerializeField] private WorldButton _unpackButton;
     [SerializeField] private Transform _boxTransform;
     [SerializeField] private SpriteRenderer _boxRenderer;
+    [SerializeField] private SpriteRenderer _lockRenderer;
     [SerializeField] private Sprite _fullBoxSprite;
     [SerializeField] private Sprite _emptyBoxSprite;
 
     private Tween _unpackBallTween;
+    private Tween _unlockTween;
     private Tween _boxTween;
     private ColorType _colorType;
+    private EmitterView _unlockableEmitter;
 
     private const float UNPACK_WIDTH = 0.7f;
     private const float UNPACK_HEIGHT = 0.7f;
@@ -46,7 +49,7 @@ public class EmitterView : MonoBehaviour
     
     private void Start()
     {
-        _worldButton.OnClick += OnClick;
+        _unpackButton.OnClick += OnUnpackButtonClick;
     }
 
 
@@ -54,27 +57,65 @@ public class EmitterView : MonoBehaviour
     {
         _unpackBallTween?.Kill();
         _boxTween?.Kill();
+        _unlockTween?.Kill();
     }
 
 
-    public void Initialize(ColorType colorType)
+    public void Initialize(ColorType colorType, bool isUnlocked)
     {
         _colorType = colorType;
         _boxRenderer.sprite = _fullBoxSprite;
-        _boxRenderer.color = Configs.Colors.GetColor(colorType);
+
+        var color = Configs.Colors.GetColor(colorType);
+        _boxRenderer.color = color;
+        _lockRenderer.color = color;
+
         _boxTransform.transform.localScale = Vector3.one;
-        _worldButton.SetInteractable(true);
+        _lockRenderer.transform.localScale = Vector3.one;
+        _lockRenderer.transform.localPosition = Vector3.zero;
+        _lockRenderer.gameObject.SetActive(!isUnlocked);
+
+        _unpackButton.SetInteractable(isUnlocked);
+
+        _unlockableEmitter = null;
+    }
+
+    public void BindUnlockableEmitter(EmitterView emitter)
+        => _unlockableEmitter = emitter;
+
+
+    private void Unlock()
+    {
+        const float LOCAL_MOVE_Y = 1f;
+
+        float duration = Configs.Rules.EmitterUnlockDuration;
+        var lockTransform = _lockRenderer.transform;
+
+        var sequence = DOTween.Sequence()
+            .Append(lockTransform.DOScale(0f, duration).SetEase(Ease.OutQuad))
+            .Join(lockTransform.DOLocalMoveY(LOCAL_MOVE_Y, duration).SetEase(Ease.OutQuad))
+            .OnComplete(() => _unpackButton.SetInteractable(true));
+
+        _unlockTween = sequence;
     }
 
 
 
-    private void OnClick() => EmitBalls();
+    private void OnUnpackButtonClick()
+    {
+        EmitBalls(onCompleted: () =>
+        {
+            _unlockableEmitter?.Unlock();
+            _unlockableEmitter = null;
+        });
+        
+    }
 
-    private void EmitBalls()
+    private void EmitBalls(Action onCompleted)
     {
         AnimateClickBox();
 
-        _worldButton.SetInteractable(false);
+        _unpackButton.SetInteractable(false);
 
         _unpackBallTween?.Kill();
         var sequence = DOTween.Sequence();
@@ -91,6 +132,7 @@ public class EmitterView : MonoBehaviour
 
         sequence.OnComplete(() =>
         {
+            onCompleted?.Invoke();
             AnimateHideBox(onCompleted: () => Pools.Emitters.Return(this));
         });
 
