@@ -62,7 +62,7 @@ SortingGroup:
   m_SortingLayerID: -854016421
   m_SortingLayer: 4
   m_SortingOrder: 0
-  m_SortAtRoot: 0
+  m_SortAtRoot: 1
   m_Sort3DAs2D: 0
 --- !u!58 &8135774566544578851
 CircleCollider2D:

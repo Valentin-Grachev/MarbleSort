@@ -41,6 +41,15 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Floor
+    uniqueID: 3246336343
+    locked: 0
+  - name: EmitterLock
+    uniqueID: 3108462527
+    locked: 0
+  - name: Borders
+    uniqueID: 2541281613
+    locked: 0
   - name: Level
     uniqueID: 2092799445
     locked: 0

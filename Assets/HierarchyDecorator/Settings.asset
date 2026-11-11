@@ -128,7 +128,7 @@ MonoBehaviour:
         m_Font: {fileID: 0}
         m_FontSize: 11
         m_FontStyle: 1
-        m_Alignment: 4
+        m_Alignment: 3
         m_WordWrap: 0
         m_RichText: 1
         m_TextClipping: 0
@@ -306,7 +306,7 @@ MonoBehaviour:
         m_StretchHeight: 0
         m_IsSDF: 0
       capturedGroups: []
-    twoToneBackground: 1
+    twoToneBackground: 0
     lightMode:
       colorOne: {r: 0.8, g: 0.8, b: 0.8, a: 1}
       colorTwo: {r: 0.765, g: 0.765, b: 0.765, a: 1}
@@ -3043,6 +3043,66 @@ MonoBehaviour:
         excluded: 0
         isBuiltIn: 0
         script: {fileID: 11500000, guid: 0660c6353105d314483e14353f3b8274, type: 3}
+        hasToggle: 1
+      - displayName: EmitterView
+        name: EmitterView, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+        content:
+          m_Text: EmitterView
+          m_Image: {fileID: -8204150473280056172, guid: 0000000000000000d000000000000000, type: 0}
+          m_Tooltip: EmitterView
+          m_TextWithWhitespace: "EmitterView\u200B"
+        shown: 0
+        excluded: 0
+        isBuiltIn: 0
+        script: {fileID: 11500000, guid: 8ee0aee40263f9048ad007283c66d716, type: 3}
+        hasToggle: 1
+      - displayName: WorldButton
+        name: WorldButton, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+        content:
+          m_Text: WorldButton
+          m_Image: {fileID: -8204150473280056172, guid: 0000000000000000d000000000000000, type: 0}
+          m_Tooltip: WorldButton
+          m_TextWithWhitespace: "WorldButton\u200B"
+        shown: 0
+        excluded: 0
+        isBuiltIn: 0
+        script: {fileID: 11500000, guid: 0c1c96fc1d995a5408b89ce3bb97aaf5, type: 3}
+        hasToggle: 1
+      - displayName: BallView
+        name: BallView, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+        content:
+          m_Text: BallView
+          m_Image: {fileID: -8204150473280056172, guid: 0000000000000000d000000000000000, type: 0}
+          m_Tooltip: BallView
+          m_TextWithWhitespace: "BallView\u200B"
+        shown: 0
+        excluded: 0
+        isBuiltIn: 0
+        script: {fileID: 11500000, guid: d5836c12eefabc7489f0d337819b8411, type: 3}
+        hasToggle: 1
+      - displayName: ReceiverView
+        name: ReceiverView, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+        content:
+          m_Text: ReceiverView
+          m_Image: {fileID: -8204150473280056172, guid: 0000000000000000d000000000000000, type: 0}
+          m_Tooltip: ReceiverView
+          m_TextWithWhitespace: "ReceiverView\u200B"
+        shown: 0
+        excluded: 0
+        isBuiltIn: 0
+        script: {fileID: 11500000, guid: 00b48b65d8b11a447812683286f8bf1a, type: 3}
+        hasToggle: 1
+      - displayName: ConveyerView
+        name: ConveyerView, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+        content:
+          m_Text: ConveyerView
+          m_Image: {fileID: -8204150473280056172, guid: 0000000000000000d000000000000000, type: 0}
+          m_Tooltip: ConveyerView
+          m_TextWithWhitespace: "ConveyerView\u200B"
+        shown: 0
+        excluded: 0
+        isBuiltIn: 0
+        script: {fileID: 11500000, guid: 9f8ede3616a7362498e69ef0157fe790, type: 3}
         hasToggle: 1
     unityVersion: 6000.3.28f1
     unityCount: 201

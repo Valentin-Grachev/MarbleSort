@@ -79,7 +79,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 404944503
   m_SortingLayer: 2
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: 010ed28cbd7acdb4abf08527e601a5f4, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -192,7 +192,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3641225810594357811}
   - component: {fileID: 4644863223542196030}
-  - component: {fileID: 5500548949964940591}
+  - component: {fileID: 3273457522747944789}
   m_Layer: 0
   m_Name: Emitter
   m_TagString: Untagged
@@ -236,7 +236,7 @@ MonoBehaviour:
   _lockRenderer: {fileID: 2613015139334030764}
   _fullBoxSprite: {fileID: 21300000, guid: f252c18cfd8f270468ae80e1ad1c43ce, type: 3}
   _emptyBoxSprite: {fileID: 21300000, guid: 1f2666ebfab215b4aac7afcf2921b0ab, type: 3}
---- !u!210 &5500548949964940591
+--- !u!210 &3273457522747944789
 SortingGroup:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -247,7 +247,7 @@ SortingGroup:
   m_SortingLayerID: 404944503
   m_SortingLayer: 2
   m_SortingOrder: 0
-  m_SortAtRoot: 0
+  m_SortAtRoot: 1
   m_Sort3DAs2D: 0
 --- !u!1 &8549486346417598485
 GameObject:
