@@ -137,7 +137,7 @@ Shader "MarbleSort/SpriteOutline"
                 float posRadius = length(expanded.xy);
                 if (localTexel > 0 && posRadius > 1e-4 && _OutlineWidth > 0)
                 {
-                    float expand = (_OutlineWidth + 1.0) * localTexel;
+                    float expand = (_OutlineWidth + 2.0) * localTexel;
                     float2 deltaPos = (expanded.xy / posRadius) * expand;
                     float2 size = localTexel / max(texel, float2(1e-6, 1e-6));
                     expanded.xy += deltaPos;
@@ -161,20 +161,32 @@ Shader "MarbleSort/SpriteOutline"
                 if (_OutlineWidth <= 0.001)
                     discard;
 
-                float coverage = SampleCoverage(IN.texcoord);
-                float2 texelStep = _MainTex_TexelSize.xy * _OutlineWidth;
+                float radius = _OutlineWidth;
+                float2 texel = _MainTex_TexelSize.xy;
+                float spread = 0;
 
                 [unroll]
                 for (int i = 0; i < 16; i++)
                 {
-                    coverage = max(coverage, SampleCoverage(IN.texcoord + kOutlineRing[i] * texelStep));
-                    coverage = max(coverage, SampleCoverage(IN.texcoord + kOutlineRing[i] * texelStep * 0.5));
+                    float2 step = kOutlineRing[i] * texel;
+                    float near = SampleCoverage(IN.texcoord + step * max(radius - 1.0, 0.0));
+                    float mid = SampleCoverage(IN.texcoord + step * radius);
+                    float far = SampleCoverage(IN.texcoord + step * (radius + 1.0));
+                    float soft = near * 0.25 + mid * 0.5 + far * 0.25;
+                    spread = max(spread, max(near, soft));
                 }
 
-                coverage *= IN.spriteAlpha;
-                clip(coverage - _AlphaCutoff);
+                float self = SampleCoverage(IN.texcoord);
+                float edge = saturate(_AlphaCutoff);
+                float outer = smoothstep(edge * 0.25, saturate(edge + 0.45), spread);
+                float inner = 1.0 - smoothstep(edge * 0.2, saturate(edge + 0.4), self);
+                float mask = saturate(outer * inner) * IN.spriteAlpha;
+
+                if (mask <= 0.004)
+                    discard;
 
                 fixed4 outline = _OutlineColor;
+                outline.a *= mask;
                 outline.rgb *= outline.a;
                 return outline;
             }
