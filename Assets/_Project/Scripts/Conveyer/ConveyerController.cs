@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 using UNodes;
 using UNodes.Extensions;
 
@@ -21,8 +22,8 @@ public class ConveyerController : IUpdateHandler
     private readonly LevelController levelController;
 
 
-    public ConveyerController(LevelController levelController, Grid emitterGrid,
-        ConveyerView conveyer, List<BallTrigger> receiverTriggers)
+    public ConveyerController(LevelController levelController, Grid emitterGrid, LockPixelSprites lockPixelSprites,
+        Tilemap lockPixelTilemap, ConveyerView conveyer, List<BallTrigger> receiverTriggers)
     {
         this.levelController = levelController;
         levelController.OnLevelStarted += OnLevelStarted;
@@ -51,7 +52,8 @@ public class ConveyerController : IUpdateHandler
                 => OnReceiverQueueBallEnter(receiverQueue, ball);
         }
 
-        levelBuilder = new LevelBuilder(emitterGrid, receiverQueues);
+        levelBuilder = new LevelBuilder
+            (emitterGrid, lockPixelTilemap, lockPixelSprites, receiverQueues);
     }
 
     private void OnLevelStarted()

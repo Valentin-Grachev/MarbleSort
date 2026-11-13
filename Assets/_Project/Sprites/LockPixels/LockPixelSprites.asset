@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee8ea52a3411fa647bce2805af3dd5c3, type: 3}
+  m_Name: LockPixelSprites
+  m_EditorClassIdentifier: Assembly-CSharp::LockPixelSprites
+  <Center>k__BackingField: {fileID: 11400000, guid: e2ee54841104d134195c44cc0381f4c5, type: 2}
+  <HasTop>k__BackingField: {fileID: 11400000, guid: 1668cd74d2b23824d83ff1809f48baa1, type: 2}
+  <HasTopLeft>k__BackingField: {fileID: 11400000, guid: 4dd45f73571afde49b16481ce3a3e528, type: 2}
+  <HasTopRight>k__BackingField: {fileID: 11400000, guid: 8b74d7844256ecd458eeb8feff5a3cea, type: 2}
+  <HasRight>k__BackingField: {fileID: 11400000, guid: 568d30d5655018c42889d98aa4d3c9b8, type: 2}
+  <HasBottomRight>k__BackingField: {fileID: 11400000, guid: aac3e5280f48d234fa5459d54a8ff5a4, type: 2}
+  <HasBottomLeft>k__BackingField: {fileID: 11400000, guid: 979f8e7e9f15cc34f86a90d3e4dcf28d, type: 2}
+  <HasBottom>k__BackingField: {fileID: 11400000, guid: f746f1145376e1e41a24aa708b32beb4, type: 2}
+  <HasLeft>k__BackingField: {fileID: 11400000, guid: 8506829105a08d74d95374b5cbd20e14, type: 2}
